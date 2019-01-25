@@ -31,7 +31,7 @@
 
   <groupId>org.apache.avro</groupId>
   <artifactId>avro-toplevel</artifactId>
-  <version>1.8.2</version>
+  <version>1.8.2.axonivy.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Avro Toplevel</name>
@@ -127,31 +127,7 @@
       <!-- Profile for generating all maven artifacts and documentation. -->
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <!-- build javadoc jars per jar for publishing to maven -->
-                <id>module-javadocs</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-              <execution>
-                <!-- build aggregate javadoc in parent only -->
-                <id>default-cli</id>
-                <goals>
-                  <goal>aggregate</goal>
-                </goals>
-                <inherited>false</inherited>
-                <configuration>
-                  <overview>avro/src/main/java/overview.html</overview>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
+          
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>

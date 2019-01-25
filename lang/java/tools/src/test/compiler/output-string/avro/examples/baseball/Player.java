@@ -78,7 +78,8 @@ public class Player extends org.apache.avro.specific.SpecificRecordBase implemen
     this.last_name = last_name;
     this.position = position;
   }
-
+  
+  public org.apache.avro.specific.SpecificData getSpecificData() { return MODEL$; }
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call.
   public java.lang.Object get(int field$) {

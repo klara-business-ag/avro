@@ -20,9 +20,16 @@ package org.apache.avro.mojo;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.avro.compiler.specific.SpecificCompiler;
+import org.apache.avro.compiler.specific.SpecificCompiler.DateTimeLogicalTypeImplementation;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -123,11 +130,47 @@ public abstract class AbstractAvroMojo extends AbstractMojo {
   protected boolean createSetters;
 
   /**
+   * The createOptionalGetters parameter enables generating the getOptional...
+   * methods that return an Optional of the requested type.
+   * This works ONLY on Java 8+
+   *
+   * @parameter property="createOptionalGetters"
+   */
+  protected boolean createOptionalGetters = false;
+
+  /**
+   * The gettersReturnOptional parameter enables generating get...
+   * methods that return an Optional of the requested type.
+   * This will replace the
+   * This works ONLY on Java 8+
+   *
+   * @parameter property="gettersReturnOptional"
+   */
+  protected boolean gettersReturnOptional = false;
+
+
+    /**
+   * A set of fully qualified class names of custom {@link org.apache.avro.Conversion} implementations to add to the compiler.
+   * The classes must be on the classpath at compile time and whenever the Java objects are serialized.
+   *
+   * @parameter property="customConversions"
+   */
+  protected String[] customConversions = new String[0];
+
+  /**
    * Determines whether or not to use Java classes for decimal types
    *
    * @parameter default-value="false"
    */
   protected boolean enableDecimalLogicalType;
+
+  /**
+   * Determines which type of classes to generate for date/time related logical types. Either 'joda' or 'jsr310'.
+   * Defaults to joda for backwards compatibility reasons.
+   *
+   * @parameter default-value="joda"
+   */
+  protected String dateTimeLogicalTypeImplementation = DateTimeLogicalTypeImplementation.JODA.name().toLowerCase();
 
   /**
    * The current Maven project.
@@ -237,7 +280,43 @@ public abstract class AbstractAvroMojo extends AbstractMojo {
     }
   }
 
+  protected DateTimeLogicalTypeImplementation getDateTimeLogicalTypeImplementation() {
+    try {
+      if (this.dateTimeLogicalTypeImplementation == null || this.dateTimeLogicalTypeImplementation.isEmpty()) {
+        return DateTimeLogicalTypeImplementation.DEFAULT;
+      } else {
+        String upper = String.valueOf(this.dateTimeLogicalTypeImplementation).trim().toUpperCase();
+        return DateTimeLogicalTypeImplementation.valueOf(upper);
+      }
+    } catch (IllegalArgumentException e) {
+      getLog().warn("Unknown value '" + this.dateTimeLogicalTypeImplementation
+        + "' for property dateTimeLogicalTypeImplementation; using '"
+        + DateTimeLogicalTypeImplementation.DEFAULT.name().toLowerCase() + "' instead");
+      return DateTimeLogicalTypeImplementation.DEFAULT;
+    }
+}
+
   protected abstract void doCompile(String filename, File sourceDirectory, File outputDirectory) throws IOException;
+
+  protected URLClassLoader createClassLoader() throws DependencyResolutionRequiredException, MalformedURLException {
+    List<URL> urls = appendElements(project.getRuntimeClasspathElements());
+    urls.addAll(appendElements(project.getTestClasspathElements()));
+    return new URLClassLoader(urls.toArray(new URL[urls.size()]),
+            Thread.currentThread().getContextClassLoader());
+  }
+
+  private List<URL> appendElements(List runtimeClasspathElements) throws MalformedURLException {
+    List<URL> runtimeUrls = new ArrayList<URL>();
+    if (runtimeClasspathElements != null) {
+      for (Object runtimeClasspathElement : runtimeClasspathElements) {
+        String element = (String) runtimeClasspathElement;
+        runtimeUrls.add(new File(element).toURI().toURL());
+      }
+    }
+    return runtimeUrls;
+  }
+
+
 
   protected abstract String[] getIncludes();
 
